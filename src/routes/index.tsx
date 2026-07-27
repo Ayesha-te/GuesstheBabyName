@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { Baby, Heart, Sparkles, Trophy, Users } from "lucide-react";
+import { Baby, Heart, ShieldCheck, Sparkles, Trophy, Users } from "lucide-react";
 
 import bgImage from "@/assets/aurora-bg.jpg";
 import { getPublicBoard, submitGuess } from "@/lib/guessing.functions";
@@ -229,8 +229,15 @@ function GuestPage() {
           )}
         </section>
 
-        <footer className="mt-8 text-center text-xs text-muted-foreground">
-          Made with love for the newest member of the family.
+        <footer className="mt-8 flex flex-col items-center justify-center gap-3 text-center text-xs text-muted-foreground sm:flex-row">
+          <span>Made with love for the newest member of the family.</span>
+          <Link
+            to="/host"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-foreground/70 transition hover:bg-white/35 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+            Host admin
+          </Link>
         </footer>
       </div>
     </main>

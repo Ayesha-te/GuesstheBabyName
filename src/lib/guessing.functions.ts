@@ -61,7 +61,7 @@ export const getPublicBoard = createServerFn({ method: "GET" }).handler(
 );
 
 export const submitGuess = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => guessSchema.parse(data))
+  .validator((data: unknown) => guessSchema.parse(data))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -138,14 +138,14 @@ function assertHost(passcode: string) {
 }
 
 export const hostLoad = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => passcodeSchema.parse(data))
+  .validator((data: unknown) => passcodeSchema.parse(data))
   .handler(async ({ data }) => {
     assertHost(data.passcode);
     return loadHostData();
   });
 
 export const hostSetBabyName = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     passcodeSchema.extend({ babyName: z.string().trim().min(1).max(60) }).parse(data),
   )
   .handler(async ({ data }) => {
@@ -159,7 +159,7 @@ export const hostSetBabyName = createServerFn({ method: "POST" })
   });
 
 export const hostDrawWinner = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => passcodeSchema.parse(data))
+  .validator((data: unknown) => passcodeSchema.parse(data))
   .handler(async ({ data }) => {
     assertHost(data.passcode);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -193,7 +193,7 @@ export const hostDrawWinner = createServerFn({ method: "POST" })
   });
 
 export const hostReset = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => passcodeSchema.parse(data))
+  .validator((data: unknown) => passcodeSchema.parse(data))
   .handler(async ({ data }) => {
     assertHost(data.passcode);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
