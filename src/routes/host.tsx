@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Dices, KeyRound, Lock, PartyPopper, RotateCcw, Trash2 } from "lucide-react";
 
 import bgImage from "@/assets/aurora-bg.jpg";
+import { CelebrationEffects } from "@/components/CelebrationEffects";
 import {
   hostDrawWinner,
   hostDeleteEntries,
@@ -157,8 +158,9 @@ function HostPage() {
       />
       <div className="soft-orb -top-20 right-0 h-72 w-72 -z-10 bg-sky" />
       <div className="soft-orb bottom-10 -left-16 h-72 w-72 -z-10 bg-blush" />
+      {winner && !rolling && <CelebrationEffects variant="screen" />}
 
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="relative z-10 mx-auto w-full max-w-2xl">
         <h1 className="text-gradient text-center text-3xl sm:text-5xl">Host console</h1>
 
         {!unlocked ? (
@@ -227,7 +229,9 @@ function HostPage() {
 
               <div className="glass-field mx-auto mt-5 flex h-24 max-w-sm items-center justify-center px-4">
                 <span
-                  className={`font-[family-name:var(--font-display)] text-2xl ${rolling ? "opacity-70" : ""}`}
+                  className={`relative font-[family-name:var(--font-display)] text-2xl ${
+                    rolling ? "opacity-70" : ""
+                  }`}
                 >
                   {rolling ??
                     winner?.guestName ??
@@ -236,7 +240,7 @@ function HostPage() {
               </div>
 
               {winner && !rolling && (
-                <p className="mt-4 inline-flex items-center gap-2 text-sm">
+                <p className="winner-celebration mt-4 inline-flex items-center gap-2 text-sm">
                   <PartyPopper className="h-4 w-4 text-primary" aria-hidden="true" />
                   Winner: <span className="font-semibold">{winner.guestName}</span> ({winner.email})
                 </p>

@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { Baby, Heart, ShieldCheck, Sparkles, Trophy, Users } from "lucide-react";
 
 import bgImage from "@/assets/aurora-bg.jpg";
+import { CelebrationEffects } from "@/components/CelebrationEffects";
 import { getPublicBoard, submitGuess } from "@/lib/guessing.functions";
 
 export const Route = createFileRoute("/")({
@@ -86,8 +87,9 @@ function GuestPage() {
       <div className="soft-orb -top-24 -left-20 h-72 w-72 -z-10 bg-blush" />
       <div className="soft-orb top-1/3 -right-24 h-80 w-80 -z-10 bg-sky" />
       <div className="soft-orb bottom-0 left-1/4 h-64 w-64 -z-10 bg-mint" />
+      {revealed && <CelebrationEffects variant="screen" />}
 
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="relative z-10 mx-auto w-full max-w-2xl">
         <header className="text-center">
           <span className="glass-panel inline-flex items-center gap-2 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase">
             <Baby className="h-3.5 w-3.5" aria-hidden="true" />
@@ -104,14 +106,14 @@ function GuestPage() {
 
         {revealed && (
           <section className="glass-panel mt-8 p-6 text-center sm:p-8">
-            <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+            <p className="relative text-xs font-semibold tracking-widest text-muted-foreground uppercase">
               The name is
             </p>
-            <p className="text-gradient mt-2 font-[family-name:var(--font-display)] text-4xl sm:text-5xl">
+            <p className="text-gradient reveal-name mt-2 font-[family-name:var(--font-display)] text-4xl sm:text-5xl">
               {data?.babyName}
             </p>
             {data?.winner ? (
-              <p className="mt-5 inline-flex flex-wrap items-center justify-center gap-2 text-sm">
+              <p className="winner-celebration mt-5 inline-flex flex-wrap items-center justify-center gap-2 text-sm">
                 <Trophy className="h-4 w-4 text-primary" aria-hidden="true" />
                 <span className="font-semibold">{data.winner.guestName}</span>
                 <span className="text-muted-foreground">guessed it right and won the draw</span>
