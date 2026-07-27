@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Dices, KeyRound, Lock, PartyPopper, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Dices,
+  KeyRound,
+  Lock,
+  PartyPopper,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Search,
+  Trash2,
+} from "lucide-react";
 
 import bgImage from "@/assets/aurora-bg.jpg";
 import { BabyNameRevealDialog } from "@/components/BabyNameRevealDialog";
@@ -10,6 +20,9 @@ import {
   hostDeleteEntries,
   hostLoad,
   hostReset,
+  hostSaveName,
+  hostSetNameActive,
+  hostArchiveName,
   hostSetBabyName,
   type HostData,
 } from "@/lib/guessing.functions";
@@ -40,6 +53,9 @@ function HostPage() {
   const draw = useServerFn(hostDrawWinner);
   const reset = useServerFn(hostReset);
   const deleteEntries = useServerFn(hostDeleteEntries);
+  const saveName = useServerFn(hostSaveName);
+  const setNameActive = useServerFn(hostSetNameActive);
+  const archiveName = useServerFn(hostArchiveName);
 
   const [passcode, setPasscode] = useState("");
   const [unlocked, setUnlocked] = useState(false);
@@ -51,6 +67,10 @@ function HostPage() {
   const [justDrew, setJustDrew] = useState(false);
   const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
   const [revealDialogOpen, setRevealDialogOpen] = useState(false);
+  const [entryTab, setEntryTab] = useState<"adult" | "kid">("adult");
+  const [search, setSearch] = useState("");
+  const [managedName, setManagedName] = useState("");
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -148,6 +168,28 @@ function HostPage() {
     setSelectedEntryIds([]);
   }
 
+  async function onSaveManagedName(e: FormEvent) {
+    e.preventDefault();
+    const res = await run(() =>
+      saveName({ data: { passcode, id: editingNameId ?? undefined, name: managedName } }),
+    );
+    if (res) {
+      setManagedName("");
+      setEditingNameId(null);
+    }
+  }
+
+  const visibleEntries = (data?.entries ?? []).filter((entry) => {
+    const q = search.trim().toLowerCase();
+    return (
+      entry.entryType === entryTab &&
+      (!q ||
+        [entry.guestName, entry.guessName, entry.mobile, entry.email, entry.guardianName].some(
+          (v) => v?.toLowerCase().includes(q),
+        ))
+    );
+  });
+
   const winner = data?.entries.find((e) => e.id === data.winnerId) ?? null;
   const allEntriesSelected =
     Boolean(data?.entries.length) && selectedEntryIds.length === data?.entries.length;
@@ -198,11 +240,32 @@ function HostPage() {
               className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary px-5 py-3 font-semibold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
             >
               <KeyRound className="h-4 w-4" aria-hidden="true" />
-              Unlock
+              {busy
+                ? "Checking…"
+                : error && error !== "Incorrect host passcode"
+                  ? "Retry unlock"
+                  : "Unlock"}
             </button>
           </form>
         ) : (
           <div className="mt-8 space-y-6">
+            {!data?.namesReady && (
+              <section role="status" className="glass-panel border-primary/30 p-5 text-sm">
+                <p className="font-semibold text-foreground">Managed names need database setup</p>
+                <p className="mt-1 text-muted-foreground">
+                  Existing entries, reveal, and draw remain available. Apply the included additive
+                  migration to enable name choices and new submissions.
+                </p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void run(() => load({ data: { passcode } }))}
+                  className="mt-3 font-semibold text-primary underline-offset-4 hover:underline disabled:opacity-50"
+                >
+                  Retry data check
+                </button>
+              </section>
+            )}
             <section className="glass-panel p-6 sm:p-8">
               <h2 className="text-xl">The real name</h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -257,7 +320,8 @@ function HostPage() {
               {winner && !rolling && (
                 <p className="winner-celebration mt-4 inline-flex items-center gap-2 text-sm">
                   <PartyPopper className="h-4 w-4 text-primary" aria-hidden="true" />
-                  Winner: <span className="font-semibold">{winner.guestName}</span> ({winner.email})
+                  Winner: <span className="font-semibold">{winner.guestName}</span>
+                  {winner.mobile ? ` (${winner.mobile})` : ""}
                 </p>
               )}
 
@@ -269,6 +333,94 @@ function HostPage() {
                 <Dices className="h-4 w-4" aria-hidden="true" />
                 {winner ? "Draw again" : "Spin the draw"}
               </button>
+            </section>
+
+            <section className="glass-panel p-6 sm:p-8">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl">Guess names</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Manage the choices shown to guests.
+                  </p>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {data?.names.filter((n) => !n.deletedAt).length ?? 0} listed
+                </span>
+              </div>
+              <form onSubmit={onSaveManagedName} className="mt-4 flex gap-2">
+                <input
+                  value={managedName}
+                  onChange={(e) => setManagedName(e.target.value)}
+                  disabled={!data?.namesReady}
+                  placeholder="Add a name"
+                  className="glass-field min-w-0 flex-1 px-4 py-2.5 outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:text-foreground/55"
+                />
+                <button
+                  disabled={busy || !data?.namesReady || managedName.trim().length < 2}
+                  className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                >
+                  {editingNameId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  {editingNameId ? "Save" : "Add"}
+                </button>
+              </form>
+              <ul className="mt-4 divide-y divide-border">
+                {data?.names
+                  .filter((n) => !n.deletedAt)
+                  .map((name) => (
+                    <li key={name.id} className="flex items-center gap-3 py-3">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={name.isActive}
+                        aria-label={`${name.isActive ? "Deactivate" : "Activate"} ${name.name}`}
+                        onClick={() =>
+                          void run(() =>
+                            setNameActive({
+                              data: { passcode, id: name.id, isActive: !name.isActive },
+                            }),
+                          )
+                        }
+                        className={`relative h-6 w-11 rounded-full transition ${name.isActive ? "bg-primary" : "bg-muted-foreground/30"}`}
+                      >
+                        <span
+                          className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${name.isActive ? "left-6" : "left-1"}`}
+                        />
+                      </button>
+                      <span
+                        className={`min-w-0 flex-1 truncate text-sm font-medium ${name.isActive ? "" : "text-muted-foreground"}`}
+                      >
+                        {name.name}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setEditingNameId(name.id);
+                          setManagedName(name.name);
+                        }}
+                        className="p-2 text-muted-foreground hover:text-foreground"
+                        aria-label={`Edit ${name.name}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (
+                            window.confirm(`Archive ${name.name}? Existing entries will be kept.`)
+                          )
+                            void run(() => archiveName({ data: { passcode, id: name.id } }));
+                        }}
+                        className="p-2 text-destructive"
+                        aria-label={`Archive ${name.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+              {data?.namesReady && !data.names.some((n) => !n.deletedAt) && (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  No names yet. Add the first choice above.
+                </p>
+              )}
             </section>
 
             <section className="glass-panel p-6 sm:p-8">
@@ -293,6 +445,35 @@ function HostPage() {
                   </button>
                 </div>
               </div>
+              <div className="mt-4 grid grid-cols-2 gap-1 rounded-[var(--radius-lg)] bg-white/30 p-1">
+                <button
+                  onClick={() => {
+                    setEntryTab("adult");
+                    setSelectedEntryIds([]);
+                  }}
+                  className={`rounded-[calc(var(--radius-lg)-4px)] px-3 py-2 text-sm font-semibold ${entryTab === "adult" ? "bg-white/70 shadow-sm" : "text-muted-foreground"}`}
+                >
+                  Adult Entries
+                </button>
+                <button
+                  onClick={() => {
+                    setEntryTab("kid");
+                    setSelectedEntryIds([]);
+                  }}
+                  className={`rounded-[calc(var(--radius-lg)-4px)] px-3 py-2 text-sm font-semibold ${entryTab === "kid" ? "bg-white/70 shadow-sm" : "text-muted-foreground"}`}
+                >
+                  Kids Entries
+                </button>
+              </div>
+              <label className="glass-field mt-3 flex items-center gap-2 px-3">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search names, guesses or contact"
+                  className="w-full bg-transparent py-2.5 text-sm outline-none"
+                />
+              </label>
               {Boolean(data?.entries.length) && (
                 <label className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <input
@@ -305,7 +486,7 @@ function HostPage() {
                 </label>
               )}
               <ul className="mt-4 divide-y divide-border">
-                {data?.entries.map((entry) => (
+                {visibleEntries.map((entry) => (
                   <li
                     key={entry.id}
                     className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3"
@@ -319,7 +500,19 @@ function HostPage() {
                     />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{entry.guestName}</p>
-                      <p className="truncate text-xs text-muted-foreground">{entry.email}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {entry.entryType === "adult"
+                          ? (entry.mobile ?? entry.email ?? "Legacy entry")
+                          : entry.guardianName
+                            ? `Guardian: ${entry.guardianName}`
+                            : "Kids entry · no contact"}
+                      </p>
+                      <time
+                        className="text-[11px] text-muted-foreground"
+                        dateTime={entry.createdAt}
+                      >
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </time>
                     </div>
                     <span className="shrink-0 rounded-full bg-accent px-3 py-1 text-sm font-semibold text-accent-foreground">
                       {entry.guessName}
@@ -327,8 +520,10 @@ function HostPage() {
                   </li>
                 ))}
               </ul>
-              {data?.entries.length === 0 && (
-                <p className="mt-3 text-sm text-muted-foreground">No entries yet.</p>
+              {visibleEntries.length === 0 && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  No {entryTab} entries match this view.
+                </p>
               )}
             </section>
 
