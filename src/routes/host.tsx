@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Dices, KeyRound, Lock, PartyPopper, RotateCcw, Trash2 } from "lucide-react";
 
 import bgImage from "@/assets/aurora-bg.jpg";
-import { CelebrationEffects } from "@/components/CelebrationEffects";
+import { BabyNameRevealDialog } from "@/components/BabyNameRevealDialog";
 import {
   hostDrawWinner,
   hostDeleteEntries,
@@ -50,6 +50,7 @@ function HostPage() {
   const [rolling, setRolling] = useState<string | null>(null);
   const [justDrew, setJustDrew] = useState(false);
   const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
+  const [revealDialogOpen, setRevealDialogOpen] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -81,6 +82,16 @@ function HostPage() {
     e.preventDefault();
     const res = await run(() => load({ data: { passcode } }));
     if (res) setUnlocked(true);
+  }
+
+  async function onReveal() {
+    const res = await run(() => setName({ data: { passcode, babyName } }));
+    if (res) setRevealDialogOpen(true);
+  }
+
+  async function onReset() {
+    const res = await run(() => reset({ data: { passcode } }));
+    if (res) setRevealDialogOpen(false);
   }
 
   async function onDraw() {
@@ -158,7 +169,11 @@ function HostPage() {
       />
       <div className="soft-orb -top-20 right-0 h-72 w-72 -z-10 bg-sky" />
       <div className="soft-orb bottom-10 -left-16 h-72 w-72 -z-10 bg-blush" />
-      {winner && !rolling && <CelebrationEffects variant="screen" />}
+      <BabyNameRevealDialog
+        babyName={data?.babyName ?? babyName}
+        open={revealDialogOpen}
+        onOpenChange={setRevealDialogOpen}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-2xl">
         <h1 className="text-gradient text-center text-3xl sm:text-5xl">Host console</h1>
@@ -201,7 +216,7 @@ function HostPage() {
                   className="glass-field w-full px-4 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                 />
                 <button
-                  onClick={() => run(() => setName({ data: { passcode, babyName } }))}
+                  onClick={onReveal}
                   disabled={busy || babyName.trim().length === 0}
                   className="shrink-0 rounded-[var(--radius-lg)] bg-primary px-6 py-3 font-semibold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
                 >
@@ -210,7 +225,7 @@ function HostPage() {
               </div>
               {data?.revealed && (
                 <button
-                  onClick={() => run(() => reset({ data: { passcode } }))}
+                  onClick={onReset}
                   disabled={busy}
                   className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
                 >

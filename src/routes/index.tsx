@@ -1,11 +1,11 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Baby, Heart, ShieldCheck, Sparkles, Trophy, Users } from "lucide-react";
 
 import bgImage from "@/assets/aurora-bg.jpg";
-import { CelebrationEffects } from "@/components/CelebrationEffects";
+import { BabyNameRevealDialog } from "@/components/BabyNameRevealDialog";
 import { getPublicBoard, submitGuess } from "@/lib/guessing.functions";
 
 export const Route = createFileRoute("/")({
@@ -43,6 +43,8 @@ function GuestPage() {
   const [guessName, setGuessName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [revealDialogOpen, setRevealDialogOpen] = useState(false);
+  const previousRevealed = useRef<boolean | undefined>(undefined);
 
   const mutation = useMutation({
     mutationFn: (vars: { guestName: string; email: string; guessName: string }) =>
@@ -74,6 +76,12 @@ function GuestPage() {
 
   const revealed = data?.revealed ?? false;
 
+  useEffect(() => {
+    if (!data) return;
+    if (previousRevealed.current === false && revealed) setRevealDialogOpen(true);
+    previousRevealed.current = revealed;
+  }, [data, revealed]);
+
   return (
     <main className="relative min-h-screen overflow-hidden px-4 py-10 sm:px-6 sm:py-16">
       <img
@@ -87,13 +95,16 @@ function GuestPage() {
       <div className="soft-orb -top-24 -left-20 h-72 w-72 -z-10 bg-blush" />
       <div className="soft-orb top-1/3 -right-24 h-80 w-80 -z-10 bg-sky" />
       <div className="soft-orb bottom-0 left-1/4 h-64 w-64 -z-10 bg-mint" />
-      {revealed && <CelebrationEffects variant="screen" />}
+      <BabyNameRevealDialog
+        babyName={data?.babyName ?? ""}
+        open={revealDialogOpen}
+        onOpenChange={setRevealDialogOpen}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-2xl">
         <header className="text-center">
           <span className="glass-panel inline-flex items-center gap-2 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase">
-            <Baby className="h-3.5 w-3.5" aria-hidden="true" />
-            A new arrival
+            <Baby className="h-3.5 w-3.5" aria-hidden="true" />A new arrival
           </span>
           <h1 className="text-gradient mt-6 text-4xl leading-tight sm:text-6xl">
             Guess the baby's name
