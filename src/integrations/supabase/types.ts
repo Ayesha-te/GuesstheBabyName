@@ -14,7 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      event_state: {
+        Row: {
+          baby_name: string | null
+          id: number
+          revealed: boolean
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          baby_name?: string | null
+          id?: number
+          revealed?: boolean
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          baby_name?: string | null
+          id?: number
+          revealed?: boolean
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_state_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "guesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guesses: {
+        Row: {
+          created_at: string
+          email: string
+          guess_key: string | null
+          guess_name: string
+          guest_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          guess_key?: string | null
+          guess_name: string
+          guest_name: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          guess_key?: string | null
+          guess_name?: string
+          guest_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
