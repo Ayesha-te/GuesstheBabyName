@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Dices, KeyRound, Lock, PartyPopper, RotateCcw } from "lucide-react";
+import { Dices, KeyRound, Lock, PartyPopper, RotateCcw, Trash2 } from "lucide-react";
 
 import bgImage from "@/assets/aurora-bg.jpg";
 import {
   hostDrawWinner,
+  hostDeleteEntries,
   hostLoad,
   hostReset,
   hostSetBabyName,
@@ -37,6 +38,7 @@ function HostPage() {
   const setName = useServerFn(hostSetBabyName);
   const draw = useServerFn(hostDrawWinner);
   const reset = useServerFn(hostReset);
+  const deleteEntries = useServerFn(hostDeleteEntries);
 
   const [passcode, setPasscode] = useState("");
   const [unlocked, setUnlocked] = useState(false);
@@ -46,6 +48,7 @@ function HostPage() {
   const [busy, setBusy] = useState(false);
   const [rolling, setRolling] = useState<string | null>(null);
   const [justDrew, setJustDrew] = useState(false);
+  const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -53,6 +56,9 @@ function HostPage() {
   function apply(next: HostData) {
     setData(next);
     setBabyName(next.babyName ?? "");
+    setSelectedEntryIds((current) =>
+      current.filter((id) => next.entries.some((entry) => entry.id === id)),
+    );
   }
 
   async function run<T extends HostData>(fn: () => Promise<T>) {
@@ -104,7 +110,35 @@ function HostPage() {
     spin();
   }
 
+  function toggleEntry(id: string) {
+    setSelectedEntryIds((current) =>
+      current.includes(id) ? current.filter((entryId) => entryId !== id) : [...current, id],
+    );
+  }
+
+  function toggleAllEntries() {
+    if (!data) return;
+    setSelectedEntryIds((current) =>
+      current.length === data.entries.length ? [] : data.entries.map((entry) => entry.id),
+    );
+  }
+
+  async function onDeleteSelected() {
+    if (selectedEntryIds.length === 0) return;
+    await run(() => deleteEntries({ data: { passcode, ids: selectedEntryIds } }));
+  }
+
+  async function onDeleteAll() {
+    if (!data || data.entries.length === 0) return;
+    const confirmed = window.confirm("Remove all entries? This cannot be undone.");
+    if (!confirmed) return;
+    await run(() => deleteEntries({ data: { passcode, all: true } }));
+    setSelectedEntryIds([]);
+  }
+
   const winner = data?.entries.find((e) => e.id === data.winnerId) ?? null;
+  const allEntriesSelected =
+    Boolean(data?.entries.length) && selectedEntryIds.length === data?.entries.length;
   const correctEntries =
     data?.entries.filter(
       (e) => e.guessName.trim().toLowerCase() === (data.babyName ?? "").trim().toLowerCase(),
@@ -219,13 +253,51 @@ function HostPage() {
             </section>
 
             <section className="glass-panel p-6 sm:p-8">
-              <h2 className="text-xl">Entries ({data?.entries.length ?? 0})</h2>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-xl">Entries ({data?.entries.length ?? 0})</h2>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={onDeleteSelected}
+                    disabled={busy || selectedEntryIds.length === 0}
+                    className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition hover:brightness-110 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    Remove selected ({selectedEntryIds.length})
+                  </button>
+                  <button
+                    onClick={onDeleteAll}
+                    disabled={busy || !data?.entries.length}
+                    className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] border border-destructive/40 px-4 py-2 text-sm font-semibold text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    Remove all
+                  </button>
+                </div>
+              </div>
+              {Boolean(data?.entries.length) && (
+                <label className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={allEntriesSelected}
+                    onChange={toggleAllEntries}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  Select all entries
+                </label>
+              )}
               <ul className="mt-4 divide-y divide-border">
                 {data?.entries.map((entry) => (
                   <li
                     key={entry.id}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3"
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3"
                   >
+                    <input
+                      type="checkbox"
+                      checked={selectedEntryIds.includes(entry.id)}
+                      onChange={() => toggleEntry(entry.id)}
+                      aria-label={`Select ${entry.guestName}`}
+                      className="h-4 w-4 accent-primary"
+                    />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{entry.guestName}</p>
                       <p className="truncate text-xs text-muted-foreground">{entry.email}</p>

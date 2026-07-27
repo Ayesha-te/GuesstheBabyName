@@ -8,6 +8,10 @@ const guessSchema = z.object({
 });
 
 const passcodeSchema = z.object({ passcode: z.string().min(1).max(200) });
+const deleteEntriesSchema = passcodeSchema.extend({
+  ids: z.array(z.string().uuid()).optional(),
+  all: z.boolean().optional(),
+});
 
 export type BoardGuess = { name: string; count: number };
 
@@ -201,5 +205,29 @@ export const hostReset = createServerFn({ method: "POST" })
       .from("event_state")
       .update({ revealed: false, winner_id: null, updated_at: new Date().toISOString() })
       .eq("id", 1);
+    return loadHostData();
+  });
+
+export const hostDeleteEntries = createServerFn({ method: "POST" })
+  .validator((data: unknown) => deleteEntriesSchema.parse(data))
+  .handler(async ({ data }) => {
+    assertHost(data.passcode);
+
+    const ids = data.ids ?? [];
+    if (!data.all && ids.length === 0) {
+      throw new Error("Select at least one entry to remove");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    await supabaseAdmin.from("event_state").update({ winner_id: null }).eq("id", 1);
+
+    const query = supabaseAdmin.from("guesses").delete();
+    const { error } = data.all ? await query.not("id", "is", null) : await query.in("id", ids);
+
+    if (error) {
+      throw new Error("Could not remove entries. Please try again.");
+    }
+
     return loadHostData();
   });
