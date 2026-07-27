@@ -70,26 +70,31 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --radius: 1.25rem;
+  --background: oklch(0.975 0.012 330);
+  --foreground: oklch(0.28 0.05 300);
+  --card: oklch(1 0 0 / 55%);
+  --card-foreground: oklch(0.28 0.05 300);
+  --popover: oklch(0.99 0.005 330);
+  --popover-foreground: oklch(0.28 0.05 300);
+  --primary: oklch(0.62 0.16 5);
+  --primary-foreground: oklch(0.99 0.005 330);
+  --secondary: oklch(0.94 0.03 200);
+  --secondary-foreground: oklch(0.32 0.05 250);
+  --muted: oklch(0.95 0.015 320);
+  --muted-foreground: oklch(0.52 0.04 300);
+  --accent: oklch(0.88 0.08 190);
+  --accent-foreground: oklch(0.28 0.05 250);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --destructive-foreground: oklch(0.99 0.005 330);
+  --border: oklch(1 0 0 / 60%);
+  --input: oklch(1 0 0 / 70%);
+  --ring: oklch(0.72 0.11 5);
+  --glass: oklch(1 0 0 / 45%);
+  --glass-border: oklch(1 0 0 / 65%);
+  --blush: oklch(0.86 0.08 15);
+  --mint: oklch(0.88 0.07 165);
+  --sky: oklch(0.86 0.07 250);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -104,6 +109,7 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
+
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
