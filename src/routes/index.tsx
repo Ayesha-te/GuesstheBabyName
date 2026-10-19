@@ -155,10 +155,10 @@ function GuestPage() {
               >
                 <TabsList className="glass-field grid h-auto w-full grid-cols-2 p-1">
                   <TabsTrigger value="adult" className="py-2.5">
-                    Adult Guess
+                    Adults
                   </TabsTrigger>
                   <TabsTrigger value="kid" className="py-2.5">
-                    Kids Guess
+                    Kids
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value={type} className="mt-5 space-y-4">
@@ -166,14 +166,14 @@ function GuestPage() {
                     label={type === "adult" ? "Full Name" : "Child Name"}
                     value={guestName}
                     set={setGuestName}
-                    placeholder={type === "adult" ? "Aisha Rahman" : "Little guesser's name"}
+                    placeholder={type === "adult" ? "Your full name" : "Little guesser's name"}
                   />
                   {type === "adult" ? (
                     <Field
                       label="Mobile Number"
                       value={mobile}
                       set={setMobile}
-                      placeholder="+92 300 1234567"
+                      placeholder="Your phone number"
                       inputMode="tel"
                     />
                   ) : (
